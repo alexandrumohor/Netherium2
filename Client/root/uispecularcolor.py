@@ -1,0 +1,414 @@
+import app
+import net
+import player
+import chr
+import ui
+import uiCommon
+import grp
+import wndMgr
+import uiScriptLocale
+import localeInfo
+import chat
+import uiToolTip
+import item
+import grpText
+import hexColorInfo
+import renderTarget
+import constInfo
+
+class SpecularColor(ui.ScriptWindow):
+	RENDER_TARGET_INDEX = 2
+	
+	def __init__(self):
+		ui.Window.__init__(self)
+		self.isLoaded = False
+
+		self.pickerPos = (0, 0)
+		self.colorHexCodes = hexColorInfo.HEX_CODES
+		self.genColor = None
+		self.colorMarker = None
+		self.toolTip = None
+		self.popup = None
+		self.selectedColor = False
+		self.srcSlotPos = 0
+		self.itemVnum = 0
+		self.isEquip = False
+		self.confirm = False
+
+		self.specularColor_a = 0
+		self.specularColor_b = 0
+		self.specularColor_c = 0
+		self.specularPower = 0
+
+	def __del__(self):
+		ui.Window.__del__(self)
+
+	def LoadWindow(self):
+		if self.isLoaded == 1:
+			return
+
+		self.isLoaded = 1
+
+		try:
+			pyScrLoader = ui.PythonScriptLoader()
+			pyScrLoader.LoadScriptFile(self, "UIScript/specularcolor.py")
+		except:
+			import exception
+			exception.Abort("SpecularColorWindow.LoadWindow.LoadScriptFile")
+
+		try:
+			self.GetChild("Board").SetCloseEvent(ui.__mem_func__(self.Close))
+			self.board = self.GetChild("Board")
+			self.thinBoard = self.GetChild("ThinBoard")
+			self.bgColorBar = self.GetChild("BGColorBar")
+			self.bgImg = self.GetChild("BGImage")
+			self.bgColorPickerImg = self.GetChild("BGColorPickerImage")
+			self.bgColorPickerButton = self.GetChild("BGColorPickerButton")
+			self.bgColorPickerDotImg = self.GetChild("BGColorPickerDotImage")
+			self.bgColorPickerDotImg.Hide()
+			self.confirmButton = self.GetChild("ConfirmButton")
+			self.cancelButton = self.GetChild("CancelButton")
+			self.removeButton = self.GetChild("RemoveButton")
+			self.specularIntensity = self.GetChild("SpecularIntensity")
+			
+			self.renderTarget = self.GetChild("RenderTarget")
+			
+			self.buttons = {
+				"moveUp" : self.GetChild("mvUpCmrBtn"),
+				"moveDown" : self.GetChild("mvDownCmrBtn"),
+				"rotateLeft" : self.GetChild("rotLeftBtn"),
+				"rotateRight" : self.GetChild("rotRightBtn"),
+
+				"moveReset" : self.GetChild("mvResetBtn"),
+
+				"zoomIn" : self.GetChild("zumInBtn"),
+				"zoomOut" : self.GetChild("zumOutBtn"),
+			}
+
+			self.buttons["moveUp"].SetEvent(ui.__mem_func__(self.__ModelUpDownCameraProgress))
+			self.buttons["moveDown"].SetEvent(ui.__mem_func__(self.__ModelUpDownCameraProgress))
+			self.buttons["rotateLeft"].SetEvent(ui.__mem_func__(self.__ModelRotationProgress))
+			self.buttons["rotateRight"].SetEvent(ui.__mem_func__(self.__ModelRotationProgress))
+			self.buttons["moveReset"].SetEvent(ui.__mem_func__(self.__ResetSettings))
+			self.buttons["zoomIn"].SetEvent(ui.__mem_func__(self.__ModelZoomProgress))
+			self.buttons["zoomOut"].SetEvent(ui.__mem_func__(self.__ModelZoomProgress))
+		except:
+			import exception
+			exception.Abort("SpecularColorWindow.LoadWindow.__Objects")
+
+		try:
+			if self.bgColorPickerButton:
+				self.bgColorPickerButton.SetEvent(ui.__mem_func__(self.OnClickColorPicker))
+
+			if self.confirmButton:
+				self.confirmButton.SetEvent(ui.__mem_func__(self.OnClickConfirmButton))
+
+			if self.cancelButton:
+				self.cancelButton.SetEvent(ui.__mem_func__(self.OnClickCancelButton))
+			
+			if self.removeButton:
+				self.removeButton.SetEvent(ui.__mem_func__(self.OnClickRemoveButton))
+			
+			if self.specularIntensity:
+				self.specularIntensity.SetEvent(ui.__mem_func__(self.OnSetSpecularIntensity))
+		except:
+			import exception
+			exception.Abort("SpecularColorWindow.LoadWindow.__Functions")
+
+		self.toolTip = uiToolTip.ToolTip()
+		self.toolTip.ClearToolTip()
+		self.popup = uiCommon.PopupDialog()
+
+	def Destroy(self):
+		self.ClearDictionary()
+		self.pickerPos = (0, 0)
+		self.genColor = None
+		self.colorMarker = None
+		self.toolTip = None
+		self.popup = None
+		self.selectedColor = False
+		self.board = 0		
+		self.srcSlotPos = 0
+		self.itemVnum = 0
+		self.isEquip = False
+		self.confirm = False
+
+		self.specularColor_a = 0
+		self.specularColor_b = 0
+		self.specularColor_c = 0
+		self.specularPower = 0
+
+	def Open(self, itemVnum, slotIndex, isEquip):
+		if not self.isLoaded:
+			self.LoadWindow()
+
+		self.srcSlotPos = slotIndex
+		self.itemVnum = itemVnum
+		self.isEquip = isEquip
+		
+		r, g, b, a = player.GetSpecularColor(slotIndex)
+		self.specularIntensity.SetSliderPos(float(a) / 255)
+		self.specularPower = a
+		
+		if not isEquip:
+			self.renderTarget.Show()
+			self.board.SetSize(325 + 305, 340 + 14 + 22)
+			self.SetSize(325 + 305, 340 + 14 + 22)
+			self.removeButton.SetPosition(-155, 340 + 14 - 10.5)
+			
+			renderTarget.SetBackground(self.RENDER_TARGET_INDEX, "d:/ymir work/ui/small_render_target.tga")
+			renderTarget.SetVisibility(self.RENDER_TARGET_INDEX, True)
+			renderTarget.SelectModel(self.RENDER_TARGET_INDEX, player.GetRace())
+			renderTarget.ResetSettings(self.RENDER_TARGET_INDEX)
+			
+			item.SelectItem(itemVnum)
+			itemType = item.GetItemType()
+			itemSubType = item.GetItemSubType()
+			
+			if itemType == item.ITEM_TYPE_ARMOR and itemSubType == item.ARMOR_BODY or itemType == item.ITEM_TYPE_COSTUME and itemSubType == item.COSTUME_TYPE_BODY:
+				renderTarget.SetArmor(self.RENDER_TARGET_INDEX, itemVnum, True)
+			elif itemType == item.ITEM_TYPE_WEAPON:
+				renderTarget.SetWeapon(self.RENDER_TARGET_INDEX, itemVnum, True)
+			elif itemType == item.ITEM_TYPE_COSTUME and itemSubType == item.COSTUME_TYPE_HAIR:
+				renderTarget.SetHair(self.RENDER_TARGET_INDEX, item.GetValue(3), True)
+					
+			renderTarget.UpdateSpecularColor(self.RENDER_TARGET_INDEX, constInfo.GetFilterPart(itemVnum), r, g, b, a)
+		else:
+			self.renderTarget.Hide()
+			self.board.SetSize(325, 340 + 14 + 22)
+			self.SetSize(325, 340 + 14 + 22)
+			self.removeButton.SetPosition(0, 340 + 14 - 10.5)
+		
+		self.SetCenterPosition()
+		self.SetTop()
+		self.Show()
+
+	def UpdateDialog(self):
+		x = wndMgr.GetScreenWidth() / 2 - 369
+		y = wndMgr.GetScreenHeight() / 2 - 417
+		self.board.SetPosition(x, y) 
+	def OnSetSpecularIntensity(self):
+		self.specularPower = int(self.specularIntensity.GetSliderPos()*255)
+
+	def OnClickCancelButton(self):
+		self.Close()
+
+	def OnClickRemoveButton(self):
+		removeQuestionDialog = uiCommon.QuestionDialogWithTimeLimitTHL()
+		removeQuestionDialog.SetText1("Are you sure you want to remove the color?")
+		removeQuestionDialog.SetTimeOverEvent(self.RequestRemove, False)
+		removeQuestionDialog.SetAcceptEvent(lambda arg = True: self.RequestRemove(arg))
+		removeQuestionDialog.SetCancelEvent(lambda arg = False: self.RequestRemove(arg))
+		removeQuestionDialog.Open(10)
+		self.removeQuestionDialog = removeQuestionDialog
+
+	def RequestRemove(self, answer):
+		if not self.removeQuestionDialog:
+			return
+
+		if answer:
+			self.confirm = True
+
+			if self.isEquip:
+				player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), 0, 0, 0, 0, True, True, True)
+
+			net.SendSpecularColorPacket(self.srcSlotPos, 0, 0, 0, 0)
+			self.Close()
+
+		self.removeQuestionDialog.Close()
+		self.removeQuestionDialog = None
+
+	def OnClickConfirmButton(self):
+		self.confirm = True
+		
+		if self.isEquip:
+			player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), self.specularColor_a, self.specularColor_b, self.specularColor_c, self.specularPower, True, True)
+			
+		net.SendSpecularColorPacket(self.srcSlotPos, self.specularColor_a, self.specularColor_b, self.specularColor_c, self.specularPower)
+		self.Close()
+
+	def Close(self):
+		if not self.confirm:
+			r, g, b, a = player.GetSpecularColor(self.srcSlotPos)
+
+			if self.isEquip:
+				if r > 0 or g > 0 or b > 0 or a > 0:
+					player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), r, g, b, a, False, True, False)
+				else:
+					player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), r, g, b, a, False, True, True)
+
+		self.pickerPos = (0, 0)
+		self.genColor = None
+		self.colorMarker = None
+		self.selectedColor = False
+		self.specularColor_a = 0
+		self.specularColor_b = 0
+		self.specularColor_c = 0
+		self.specularPower = 0
+		self.bgColorPickerDotImg.Hide()
+		self.srcSlotPos = 0
+		self.itemVnum = 0
+		self.isEquip = False
+		self.confirm = False
+		self.Hide()
+
+	def OnPressEscapeKey(self):
+		self.Close()
+		return True
+
+	def OnClickColorPicker(self):
+		rgbColor = self.GetRGBColor(self.pickerPos[0], self.pickerPos[1])
+
+		if rgbColor[0] <= 20 and rgbColor[1] <= 20 and rgbColor[2] <= 20:
+			rgbColorNew = list(rgbColor)
+			rgbColorNew[0] = 0
+			rgbColorNew[1] = 0
+			rgbColorNew[2] = 0
+			rgbColor = tuple(rgbColorNew)
+			self.selectedColor = False
+		else:
+			self.selectedColor = True
+
+		r, g, b = (float(rgbColor[0]) / 255, float(rgbColor[1]) / 255, float(rgbColor[2]) / 255)
+		self.genColor = (r, g, b)
+
+		if self.bgColorBar:
+			self.bgColorBar.SetColor(grp.GenerateColor(r, g, b, 1.0))
+			
+			if self.renderTarget.IsShow():
+				renderTarget.UpdateSpecularColor(self.RENDER_TARGET_INDEX, constInfo.GetFilterPart(self.itemVnum), rgbColor[0], rgbColor[1], rgbColor[2], self.specularPower)
+			
+			if self.isEquip:
+				player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), rgbColor[0], rgbColor[1], rgbColor[2], self.specularPower, True)
+
+		if self.bgColorPickerDotImg:
+			self.bgColorPickerDotImg.SetPosition(self.pickerPos[0] - (self.bgColorPickerDotImg.GetWidth()/2), self.pickerPos[1] - (self.bgColorPickerDotImg.GetHeight()/2))
+			self.bgColorPickerDotImg.Show()
+
+			colorMarker = ui.TextLine()
+			colorMarker.SetParent(self.bgColorPickerDotImg)
+			colorMarker.SetPosition(5, -15)
+			colorMarker.SetHorizontalAlignCenter()
+			colorMarker.SetText("%s" % self.colorHexCodes[str("%sx%s" % (self.pickerPos[0], self.pickerPos[1]))])
+			colorMarker.Show()
+			self.colorMarker = colorMarker
+
+		tmpR, tmpG, tmpB = (float(rgbColor[0]), float(rgbColor[1]), float(rgbColor[2]))
+		self.specularColor_a = tmpR
+		self.specularColor_b = tmpG
+		self.specularColor_c = tmpB
+
+	def HexToRGB(self, strValue):
+		strValue = strValue.lstrip("#")
+		lv = len(strValue)
+		rgbCode = (0, 0 ,0)
+		try:
+			rgbCode = tuple(int(strValue[i:i+int(lv/3)], 16) for i in range(0, lv, int(lv/3)))
+		except:
+			pass
+
+		return rgbCode
+
+	def GetRGBColor(self, x, y):
+		pickerPos = "%dx%d" % (x, y)
+		hexColorCode = self.colorHexCodes[str(pickerPos)].split("#")
+		return self.HexToRGB(str(hexColorCode[1]))
+
+	def ChangeColor(self, x, y):
+		if x > 255:
+			x = 255
+
+		if y > 255:
+			y = 255
+
+		rgbColor = self.GetRGBColor(x, y)
+		r, g, b = (float(rgbColor[0]) / 255, float(rgbColor[1]) / 255, float(rgbColor[2]) / 255)
+
+		if self.bgColorBar:
+			self.bgColorBar.SetColor(grp.GenerateColor(r, g, b, 1.0))
+			
+			if self.renderTarget.IsShow():
+				renderTarget.UpdateSpecularColor(self.RENDER_TARGET_INDEX, constInfo.GetFilterPart(self.itemVnum), rgbColor[0], rgbColor[1], rgbColor[2], self.specularPower)
+			
+			if self.isEquip:
+				player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), rgbColor[0], rgbColor[1], rgbColor[2], self.specularPower, True)
+
+	def OnUpdate(self):
+		self.__ModelUpDownCameraProgress()
+		self.__ModelRotationProgress()
+		self.__ModelZoomProgress()
+		
+		if self.bgColorPickerButton.IsIn():
+			xBtn, yBtn = self.bgColorPickerButton.GetGlobalPosition()
+			btnHeight = self.bgColorPickerButton.GetHeight()
+			xMousePos, yMousePos = wndMgr.GetMousePosition()
+
+			if yMousePos - yBtn < btnHeight - 1:
+				xMouse = xMousePos - xBtn
+				yMouse = yMousePos - yBtn
+
+				if xMouse > 255:
+					xMouse = 255
+
+				if yMouse > 255:
+					yMouse = 255
+
+				self.pickerPos = (xMouse, yMouse)
+				self.ChangeColor(xMouse, yMouse)
+
+				if self.toolTip:
+					toolTipText = "%s" % (self.colorHexCodes[str("%sx%s" % (xMouse, yMouse))])
+					arglen = len(str(toolTipText))
+					self.toolTip.ClearToolTip()
+					self.toolTip.SetThinBoardSize(8 * arglen)
+					self.toolTip.AppendTextLine(toolTipText, 0xffffff00)
+					self.toolTip.Show()
+				else:
+					self.toolTip.Hide()
+		else:
+			if self.genColor and self.bgColorBar:
+				self.bgColorBar.SetColor(grp.GenerateColor(self.genColor[0], self.genColor[1], self.genColor[2], 1.0))
+				
+				if self.renderTarget.IsShow():
+					renderTarget.UpdateSpecularColor(self.RENDER_TARGET_INDEX, constInfo.GetFilterPart(self.itemVnum), self.specularColor_a, self.specularColor_b, self.specularColor_c, self.specularPower)
+				
+				if self.isEquip:
+					player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), self.specularColor_a, self.specularColor_b, self.specularColor_c, self.specularPower, True)
+			else:
+				r, g, b, a = player.GetSpecularColor(self.srcSlotPos)
+				self.bgColorBar.SetColor(grp.GenerateColor(float(r) / 255, float(g) / 255, float(b) / 255, 0.0))
+				
+				if self.renderTarget.IsShow():
+					renderTarget.UpdateSpecularColor(self.RENDER_TARGET_INDEX, constInfo.GetFilterPart(self.itemVnum), r, g, b, self.specularPower)
+				
+				if self.isEquip:
+					player.UpdateSpecularColor(constInfo.GetFilterPart(self.itemVnum), r, g, b, self.specularPower, True)
+
+			if self.toolTip:
+				self.toolTip.Hide()
+
+	def __ModelUpDownCameraProgress(self):
+		if self.buttons["moveUp"].IsDown():
+			renderTarget.SetRenderingPosition(self.RENDER_TARGET_INDEX, False)
+
+		if self.buttons["moveDown"].IsDown():
+			renderTarget.SetRenderingPosition(self.RENDER_TARGET_INDEX, True)
+
+	def __ModelRotationProgress(self):
+		if self.buttons["rotateLeft"].IsDown():
+			renderTarget.SetMove(self.RENDER_TARGET_INDEX, False)
+
+		if self.buttons["rotateRight"].IsDown():
+			renderTarget.SetMove(self.RENDER_TARGET_INDEX, True)
+
+	def __ModelZoomProgress(self):
+		if self.buttons["zoomIn"].IsDown():
+			renderTarget.SetZoom(self.RENDER_TARGET_INDEX, True)
+
+		if self.buttons["zoomOut"].IsDown():
+			renderTarget.SetZoom(self.RENDER_TARGET_INDEX, False)
+
+	def __ResetSettings(self):
+		renderTarget.ResetSettings(self.RENDER_TARGET_INDEX)
+
+
