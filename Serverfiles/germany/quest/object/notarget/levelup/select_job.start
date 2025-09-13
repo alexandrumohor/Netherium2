@@ -1,0 +1,6 @@
+if pc . get_level ( ) >= 5 and pc . get_skill_group ( ) == 0 then if pc . getf ( "select_job" , "selecting" ) ~= 1 then 
+cmdchat ( "SELECT_JOB QID#" .. q . getcurrentquestindex ( ) ) 
+cmdchat ( "SELECT_JOB OPEN#" ) 
+pc . setf ( "select_job" , "selecting" , 1 ) 
+end 
+ return end 

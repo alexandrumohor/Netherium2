@@ -1,0 +1,6 @@
+say_title ( mob_name ( 60003 ) ) 
+say ( "" ) 
+say ( gameforge . sash . msg_sash01 ) 
+say ( "" ) 
+say ( gameforge . sash . msg_sash02 ) 
+say ( "" ) 

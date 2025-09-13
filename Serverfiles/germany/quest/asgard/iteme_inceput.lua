@@ -1,0 +1,57 @@
+quest iteme_inceput begin
+	state start begin
+		when login with pc.get_level() == 1 begin
+			if pc.get_job() == 0 then
+				pc.give_item2(11209, 1)
+				pc.give_item2(19, 1)
+				pc.give_item2(3009, 1)
+				pc.give_item2(12209, 1)
+			elseif pc.get_job() == 1 then
+				pc.give_item2(11409, 1)
+				pc.give_item2(1009, 1)
+				pc.give_item2(2009, 1)
+				pc.give_item2(12349, 1)
+			elseif pc.get_job() == 2 then
+				pc.give_item2(11609, 1)
+				pc.give_item2(19, 1)
+				pc.give_item2(12489, 1)
+			elseif pc.get_job() == 3 then
+				pc.give_item2(11809, 1)
+				pc.give_item2(5009, 1)
+				pc.give_item2(7009, 1)
+				pc.give_item2(12629, 1)
+			end
+			pc.give_item2(72726, 1)
+			pc.give_item2(72730, 1)
+			pc.give_item2(50512, 1)
+			pc.give_item2(70007, 1)
+			pc.give_item2(71124, 1)
+			pc.give_item2(70057, 1)
+			pc.give_item2(72702, 1)
+			pc.give_item2(71027, 200)
+			pc.give_item2(71028, 200)
+			pc.give_item2(71029, 200)
+			pc.give_item2(71030, 200)
+			pc.give_item2(71044, 200)
+			pc.give_item2(71045, 200)
+			pc.give_item2(13009, 1)
+			pc.give_item2(14009, 1)
+			pc.give_item2(15009, 1)
+			pc.give_item2(16009, 1)
+			pc.give_item2(17009, 1)
+			pc.give_item2(71050, 200)
+			pc.give_item2(27102, 200)
+			pc.set_skill_level(121, 40)
+			pc.set_skill_level(122, 40)
+			pc.set_skill_level(123, 40)
+			pc.set_skill_level(124, 40)
+			pc.set_skill_level(125, 40)
+			pc.set_skill_level(126, 40)
+			pc.set_skill_level(127, 40)
+			pc.set_skill_level(128, 40)
+			pc.set_skill_level(129, 40)
+			pc.set_skill_level(130, 40)
+			pc.set_skill_level(131, 40)
+		end
+	end
+end

@@ -1,0 +1,67 @@
+quest select_job begin
+	state start begin
+		function give_bassically_skills()
+			pc.set_skill_level(121, 40)
+			pc.set_skill_level(122, 2)
+			pc.set_skill_level(123, 40)
+			pc.set_skill_level(124, 40)
+			pc.set_skill_level(125, 40)
+			pc.set_skill_level(126, 40)
+			pc.set_skill_level(127, 40)
+			pc.set_skill_level(128, 40)
+			pc.set_skill_level(129, 40)
+			pc.set_skill_level(130, 40)
+			pc.set_skill_level(131, 40)
+			pc.set_skill_level(132, 40)
+			pc.set_skill_level(133, 40)
+			pc.set_skill_level(134, 40)
+			pc.set_skill_level(135, 40)
+			pc.set_skill_level(137, 20)
+			pc.set_skill_level(138, 20)	
+			pc.set_skill_level(139, 20)	
+			pc.set_skill_level(140, 20)	
+			horse.set_level(21)
+		end
+		when login or levelup with pc.get_level()>=5 and pc.get_skill_group()==0 begin
+			if pc.getf('select_job', 'selecting') != 1 then
+				cmdchat('SELECT_JOB QID#'..q.getcurrentquestindex())
+				cmdchat('SELECT_JOB OPEN#')
+				pc.setf('select_job', 'selecting', 1)
+			end
+		end	
+		
+		when logout begin
+			cmdchat('SELECT_JOB CLOSE#')
+			pc.setf('select_job', 'selecting', 0)
+		end
+		
+		when button begin
+			if pc.get_skill_group()==0 then 
+				cmdchat('SELECT_JOB INPUT#1')
+				local group = split(input(cmdchat('SELECT_JOB SEND#')), '#')
+				cmdchat('SELECT_JOB INPUT#0')
+				
+				if group[1] == '1' then
+					pc.set_skill_group(1)
+					select_job.give_bassically_skills()			
+					pc.clear_skill()	
+					pc.setf('select_job', 'selecting', 0)
+				elseif group[1] == '2' then
+					if pc.get_job()==4 then
+						pc.set_skill_group(1)
+						select_job.give_bassically_skills()			
+					else
+						pc.set_skill_group(2)
+						select_job.give_bassically_skills()
+					end
+					pc.clear_skill()
+					pc.setf('select_job', 'selecting', 0)
+				else
+					syschat('ERROR @1')
+				end
+			else
+				syschat('ERROR @2')
+			end
+		end
+	end
+end

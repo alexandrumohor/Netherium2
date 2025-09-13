@@ -1,0 +1,28 @@
+say_title ( "Resetare competenþe:" ) 
+say ( "" ) 
+say ( "Gândeºte-te bine înainte sã faci asta!" ) 
+say ( "Cu acest pergament iþi vei reseta toate" ) 
+say ( "competenþele." ) 
+say ( "" ) 
+say ( "Eºti sigur cã vrei acest lucru?" ) 
+say ( "" ) 
+local s = select ( "Da" , "Nu" ) 
+if 2 == s then 
+return 
+end 
+say_title ( "Resetare competenþe:" ) 
+say ( "" ) 
+say ( "Aceastã acþiune este ireversibilã." ) 
+say ( "Esti sigur?" ) 
+say ( "" ) 
+local c = select ( "Da, reseteazã " , "Nu" ) 
+if 2 == c then 
+return 
+end 
+say_title ( "Resetare competenþe:" ) 
+say ( "" ) 
+say ( "Competenþele tale au fost resetate." ) 
+say ( "" ) 
+pc . remove_item ( 71002 ) 
+pc . clear_skill ( ) 
+pc . set_skill_group ( 0 ) 

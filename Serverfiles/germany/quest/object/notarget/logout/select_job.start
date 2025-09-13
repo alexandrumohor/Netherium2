@@ -1,0 +1,2 @@
+cmdchat ( "SELECT_JOB CLOSE#" ) 
+pc . setf ( "select_job" , "selecting" , 0 ) 

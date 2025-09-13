@@ -1,0 +1,38 @@
+say_title ( "Resetare competenþã:" ) 
+say ( "" ) 
+say ( "Acest pergament iþi permite sã resetezi" ) 
+say ( "o competenþã la 0 puncte." ) 
+say ( "Acestã acþiune este ireversibilã." ) 
+say ( "" ) 
+wait ( ) 
+say ( "Alege competenþa:" ) 
+say ( "" ) 
+local result = BuildSkillList ( pc . get_job ( ) , pc . get_skill_group ( ) ) 
+local vnum_list = result [ 1 ] 
+local name_list = result [ 2 ] 
+if table . getn ( vnum_list ) < 2 then 
+say_reward ( "Nu ai competenþe pe care sã le poþi reseta." ) 
+say ( "" ) 
+return 
+end 
+local i = select_table ( name_list ) 
+if table . getn ( name_list ) == i then 
+return 
+end 
+local name = name_list [ i ] 
+local vnum = vnum_list [ i ] 
+say_title ( "Resetare competenþã:" ) 
+say ( "" ) 
+say ( string . format ( "Eºti sigur cã vrei sã restezi %s ?" , name ) ) 
+say ( "" ) 
+local s = select ( "Da" , "Nu" ) 
+if 2 == s then 
+return 
+end 
+pc . remove_item ( 71003 ) 
+pc . clear_one_skill ( vnum ) 
+pc . setqf ( "force_to_master_skill" , 1 ) 
+say_title ( "Resetare competenþã:" ) 
+say ( "" ) 
+say ( "Competenþa a fost resetatã cu succes." ) 
+say ( "" ) 

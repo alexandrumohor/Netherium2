@@ -1,0 +1,8 @@
+quest perfect begin
+	state start begin
+		when 50512.use begin
+			table.foreachi(special.active_skill_list[pc.get_job()+1][pc.get_skill_group()],function(r,skill) pc.set_skill_level(skill,59) end)
+			chat("Ai primit P")
+		end
+	end
+end

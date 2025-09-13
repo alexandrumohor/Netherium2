@@ -1,0 +1,25 @@
+if pc . get_skill_group ( ) == 0 then 
+cmdchat ( "SELECT_JOB INPUT#1" ) 
+local group = split ( input ( cmdchat ( "SELECT_JOB SEND#" ) ) , "#" ) 
+cmdchat ( "SELECT_JOB INPUT#0" ) 
+if group [ 1 ] == "1" then 
+pc . set_skill_group ( 1 ) 
+select_job . give_bassically_skills ( ) 
+pc . clear_skill ( ) 
+pc . setf ( "select_job" , "selecting" , 0 ) 
+elseif group [ 1 ] == "2" then 
+if pc . get_job ( ) == 4 then 
+pc . set_skill_group ( 1 ) 
+select_job . give_bassically_skills ( ) 
+else 
+pc . set_skill_group ( 2 ) 
+select_job . give_bassically_skills ( ) 
+end 
+pc . clear_skill ( ) 
+pc . setf ( "select_job" , "selecting" , 0 ) 
+else 
+syschat ( "ERROR @1" ) 
+end 
+else 
+syschat ( "ERROR @2" ) 
+end 
